@@ -10,6 +10,7 @@ import (
 
 	"github.com/yamakenji24/golang-auth/domain/entity"
 	"github.com/yamakenji24/golang-auth/pkg/config"
+	"github.com/yamakenji24/golang-auth/pkg/logger"
 )
 
 type client struct {
@@ -29,7 +30,7 @@ func NewClient(cfg *config.Config) *client {
 func (c *client) sendRequest(method, url string, body []byte) ([]byte, error) {
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, &AuthleteError{Code: "REQUEST_ERROR", Message: "Failed to create request", Err: err}
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -38,13 +39,13 @@ func (c *client) sendRequest(method, url string, body []byte) ([]byte, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, &AuthleteError{Code: "REQUEST_ERROR", Message: "Failed to send request", Err: err}
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, &AuthleteError{Code: "READ_ERROR", Message: "Failed to read response body", Err: err}
 	}
 
 	return respBody, nil
@@ -66,17 +67,20 @@ func (c *client) RequestAuthorization(params map[string]string) (*entity.AuthRes
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, err
+		logger.LogError("Error marshaling request body: %v", err)
+		return nil, &AuthleteError{Code: "MARSHAL_ERROR", Message: "Failed to marshal request body", Err: err}
 	}
 
 	body, err := c.sendRequest("POST", apiURL, jsonBody)
 	if err != nil {
+		logger.LogError("Error sending request: %v", err)
 		return nil, err
 	}
 
 	var result entity.AuthResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
+		logger.LogError("Error unmarshaling response body: %v", err)
+		return nil, &AuthleteError{Code: "UNMARSHAL_ERROR", Message: "Failed to unmarshal response body", Err: err}
 	}
 
 	return &result, nil
@@ -92,17 +96,20 @@ func (c *client) IssueAuthorization(ticket string) (*entity.AuthResponse, error)
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, err
+		logger.LogError("Error marshaling request body: %v", err)
+		return nil, &AuthleteError{Code: "MARSHAL_ERROR", Message: "Failed to marshal request body", Err: err}
 	}
 
 	body, err := c.sendRequest("POST", apiURL, jsonBody)
 	if err != nil {
+		logger.LogError("Error sending request: %v", err)
 		return nil, err
 	}
 
 	var result entity.AuthResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
+		logger.LogError("Error unmarshaling response body: %v", err)
+		return nil, &AuthleteError{Code: "UNMARSHAL_ERROR", Message: "Failed to unmarshal response body", Err: err}
 	}
 
 	return &result, nil
@@ -124,17 +131,20 @@ func (c *client) ExchangeToken(params map[string]string) (*entity.TokenResponse,
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, err
+		logger.LogError("Error marshaling request body: %v", err)
+		return nil, &AuthleteError{Code: "MARSHAL_ERROR", Message: "Failed to marshal request body", Err: err}
 	}
 
 	body, err := c.sendRequest("POST", apiURL, jsonBody)
 	if err != nil {
+		logger.LogError("Error sending request: %v", err)
 		return nil, err
 	}
 
 	var result entity.TokenResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
+		logger.LogError("Error unmarshaling response body: %v", err)
+		return nil, &AuthleteError{Code: "UNMARSHAL_ERROR", Message: "Failed to unmarshal response body", Err: err}
 	}
 
 	return &result, nil
