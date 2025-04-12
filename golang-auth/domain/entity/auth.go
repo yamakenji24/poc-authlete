@@ -22,3 +22,17 @@ type TokenResponse struct {
 	IdToken         string `json:"idToken"`
 	ResponseContent string `json:"responseContent"`
 }
+
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	IDToken      string `json:"id_token"`
+}
+
+type UserInfo struct {
+	Sub       string `json:"sub"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Picture   string `json:"picture"`
+	UpdatedAt int64  `json:"updated_at"`
+}

@@ -14,21 +14,31 @@ import (
 type AuthUseCase interface {
 	GetAuthorizationURL() (string, error)
 	Login(req entity.AuthRequest) (string, error)
-	ExchangeCodeForTokens(code, codeVerifier string) (*entity.TokenResponse, error)
 	GetAuthData(state string) (entity.AuthData, bool)
+	ExchangeCodeForTokens(code, codeVerifier string) (entity.Tokens, error)
+	StoreSession(sessionID, accessToken string) error
+	GetAccessToken(sessionID string) (string, error)
+	GetUserInfo(accessToken string) (entity.UserInfo, error)
+	DeleteSession(sessionID string) error
 }
 
 type authUseCase struct {
-	authRepo     repository.AuthRepository
-	authleteRepo repository.AuthleteClient
-	config       *config.Config
+	authRepo       repository.AuthRepository
+	authleteRepo   repository.AuthleteClient
+	config         *config.Config
+	authleteClient repository.AuthleteClient
+	authDataMap    map[string]entity.AuthData
+	sessionMap     map[string]string
 }
 
-func NewAuthUseCase(authRepo repository.AuthRepository, authleteRepo repository.AuthleteClient, cfg *config.Config) AuthUseCase {
+func NewAuthUseCase(authRepo repository.AuthRepository, authleteRepo repository.AuthleteClient, cfg *config.Config, authleteClient repository.AuthleteClient) AuthUseCase {
 	return &authUseCase{
-		authRepo:     authRepo,
-		authleteRepo: authleteRepo,
-		config:       cfg,
+		authRepo:       authRepo,
+		authleteRepo:   authleteRepo,
+		config:         cfg,
+		authleteClient: authleteClient,
+		authDataMap:    make(map[string]entity.AuthData),
+		sessionMap:     make(map[string]string),
 	}
 }
 
@@ -78,7 +88,7 @@ func (u *authUseCase) GetAuthorizationURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://localhost:8081/auth/login?state=%s", state), nil
+	return fmt.Sprintf("http://poc-authlete.local/auth/login?state=%s", state), nil
 }
 
 func (u *authUseCase) Login(req entity.AuthRequest) (string, error) {
@@ -92,10 +102,12 @@ func (u *authUseCase) Login(req entity.AuthRequest) (string, error) {
 		return "", err
 	}
 
+	fmt.Println(resp.ResponseContent)
+
 	return resp.ResponseContent + "&state=" + req.State, nil
 }
 
-func (u *authUseCase) ExchangeCodeForTokens(code, codeVerifier string) (*entity.TokenResponse, error) {
+func (u *authUseCase) ExchangeCodeForTokens(code, codeVerifier string) (entity.Tokens, error) {
 	params := map[string]string{
 		"grant_type":    "authorization_code",
 		"code":          code,
@@ -103,9 +115,49 @@ func (u *authUseCase) ExchangeCodeForTokens(code, codeVerifier string) (*entity.
 		"code_verifier": codeVerifier,
 	}
 
-	return u.authleteRepo.ExchangeToken(params)
+	tokenResponse, err := u.authleteRepo.ExchangeToken(params)
+	if err != nil {
+		return entity.Tokens{}, err
+	}
+
+	return entity.Tokens{
+		AccessToken:  tokenResponse.AccessToken,
+		RefreshToken: tokenResponse.RefreshToken,
+		IDToken:      tokenResponse.IdToken,
+	}, nil
 }
 
 func (u *authUseCase) GetAuthData(state string) (entity.AuthData, bool) {
 	return u.authRepo.GetAuthData(state)
+}
+
+// StoreSession セッションIDとアクセストークンを紐付けて保存
+func (u *authUseCase) StoreSession(sessionID, accessToken string) error {
+	u.sessionMap[sessionID] = accessToken
+	return nil
+}
+
+// GetAccessToken セッションIDからアクセストークンを取得
+func (u *authUseCase) GetAccessToken(sessionID string) (string, error) {
+	accessToken, ok := u.sessionMap[sessionID]
+	if !ok {
+		return "", fmt.Errorf("session not found")
+	}
+	return accessToken, nil
+}
+
+// GetUserInfo アクセストークンからユーザー情報を取得
+func (u *authUseCase) GetUserInfo(accessToken string) (entity.UserInfo, error) {
+	//return u.authleteClient.GetUserInfo(accessToken)
+	return entity.UserInfo{
+		Sub: "1234567890",
+		Name: "John Doe",
+		Email: "john.doe@example.com",
+	}, nil
+}
+
+// DeleteSession セッションを削除
+func (u *authUseCase) DeleteSession(sessionID string) error {
+	delete(u.sessionMap, sessionID)
+	return nil
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/yamakenji24/golang-auth/domain/usecase"
 	"github.com/yamakenji24/golang-auth/infrastructure/external/authlete"
@@ -12,26 +13,42 @@ import (
 )
 
 func main() {
+	r := gin.Default()
+
+	// CORSの設定
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://poc-authlete.local"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * 60 * 60,
+	}))
+
+	// 依存性の注入
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	authRepo := memory.NewAuthRepository()
 	authleteClient := authlete.NewClient(cfg)
-	authUseCase := usecase.NewAuthUseCase(authRepo, authleteClient, cfg)
+	authRepo := memory.NewAuthRepository()
+	authUseCase := usecase.NewAuthUseCase(authRepo, authleteClient, cfg, authleteClient)
 	authHandler := handler.NewAuthHandler(authUseCase)
 
-	r := gin.Default()
-
-	// 認可エンドポイント
-	r.GET("/auth/authorize", authHandler.Authorize)
-
-	// ログインエンドポイント
-	r.POST("/auth/login", authHandler.Login)
-
-	// コールバックエンドポイント
-	r.GET("/auth/callback", authHandler.Callback)
+	// ルーティング
+	api := r.Group("/api")
+	{
+		auth := api.Group("/auth")
+		{
+			auth.GET("/authorize", authHandler.Authorize)
+			auth.POST("/login", authHandler.Login)
+			auth.GET("/callback", authHandler.Callback)
+			auth.GET("/session", authHandler.GetSession)
+			auth.GET("/userinfo", authHandler.GetUserInfo)
+			auth.POST("/logout", authHandler.Logout)
+		}
+	}
 
 	r.Run(":3000")
 }

@@ -149,3 +149,35 @@ func (c *client) ExchangeToken(params map[string]string) (*entity.TokenResponse,
 
 	return &result, nil
 }
+
+// GetUserInfo アクセストークンからユーザー情報を取得
+func (c *client) GetUserInfo(accessToken string) (entity.UserInfo, error) {
+	apiURL := fmt.Sprintf("%s/%s/auth/userinfo", c.config.AuthleteBaseURL, c.config.AuthleteServiceID)
+	fmt.Println("access_token: ", accessToken)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+			return entity.UserInfo{}, &AuthleteError{Code: "REQUEST_ERROR", Message: "Failed to create request", Err: err}
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+			return entity.UserInfo{}, &AuthleteError{Code: "REQUEST_ERROR", Message: "Failed to send request", Err: err}
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+			return entity.UserInfo{}, &AuthleteError{Code: "READ_ERROR", Message: "Failed to read response body", Err: err}
+	}
+
+	var userInfo entity.UserInfo
+	if err := json.Unmarshal(respBody, &userInfo); err != nil {
+			return entity.UserInfo{}, &AuthleteError{Code: "UNMARSHAL_ERROR", Message: "Failed to unmarshal response body", Err: err}
+	}
+
+	return userInfo, nil
+}
