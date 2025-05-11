@@ -6,7 +6,7 @@ import {
   UserInfo,
 } from "../types/auth";
 
-const API_BASE_URL = "http://poc-authlete.local/api";
+const API_BASE_URL = "https://poc-authlete.local/api";
 
 export const authApi = {
   // 認可リクエストを送信

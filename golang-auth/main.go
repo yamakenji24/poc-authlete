@@ -8,6 +8,7 @@ import (
 	"github.com/yamakenji24/golang-auth/domain/usecase"
 	"github.com/yamakenji24/golang-auth/infrastructure/external/authlete"
 	"github.com/yamakenji24/golang-auth/infrastructure/persistence/memory"
+	user "github.com/yamakenji24/golang-auth/infrastructure/repository/memory"
 	"github.com/yamakenji24/golang-auth/interface/handler"
 	"github.com/yamakenji24/golang-auth/pkg/config"
 )
@@ -17,7 +18,7 @@ func main() {
 
 	// CORSの設定
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://poc-authlete.local"},
+		AllowOrigins:     []string{"https://poc-authlete.local"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -36,6 +37,11 @@ func main() {
 	authUseCase := usecase.NewAuthUseCase(authRepo, authleteClient, cfg, authleteClient)
 	authHandler := handler.NewAuthHandler(authUseCase)
 
+	passkeyRepo := memory.NewPasskeyRepository()
+	userRepo := user.NewUserRepository();
+	passkeyUseCase := usecase.NewPasskeyUseCase(passkeyRepo, userRepo)
+	passkeyHandler := handler.NewPasskeyHandler(passkeyUseCase)
+
 	// ルーティング
 	api := r.Group("/api")
 	{
@@ -47,6 +53,14 @@ func main() {
 			auth.GET("/session", authHandler.GetSession)
 			auth.GET("/userinfo", authHandler.GetUserInfo)
 			auth.POST("/logout", authHandler.Logout)
+		}
+
+		passkey := api.Group("/passkey")
+		{
+			passkey.POST("/register/start", passkeyHandler.StartRegistration)
+			passkey.POST("/register/complete", passkeyHandler.CompleteRegistration)
+			passkey.POST("/authenticate/start", passkeyHandler.StartAuthentication)
+			passkey.POST("/authenticate/complete", passkeyHandler.CompleteAuthentication)
 		}
 	}
 

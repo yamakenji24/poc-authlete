@@ -1,5 +1,7 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { Link } from "react-router-dom";
+
 export const Dashboard: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
 
@@ -14,10 +16,16 @@ export const Dashboard: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold">Dashboard</h1>
+                <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
               </div>
             </div>
             <div className="flex items-center">
+              <Link
+                to="/account"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Account Settings
+              </Link>
               <button
                 onClick={logout}
                 className="ml-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

@@ -30,7 +30,7 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(301, url)
+	c.Redirect(302, url)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -90,7 +90,7 @@ func (h *AuthHandler) Callback(c *gin.Context) {
 		true,                 // HttpOnly
 	)
 
-	c.Redirect(301, "http://poc-authlete.local/dashboard")
+	c.Redirect(302, "https://poc-authlete.local/dashboard")
 }
 
 // ランダムなセッションIDを生成

@@ -88,7 +88,7 @@ func (u *authUseCase) GetAuthorizationURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://poc-authlete.local/auth/login?state=%s", state), nil
+	return fmt.Sprintf("https://poc-authlete.local/auth/login?state=%s", state), nil
 }
 
 func (u *authUseCase) Login(req entity.AuthRequest) (string, error) {
@@ -148,12 +148,7 @@ func (u *authUseCase) GetAccessToken(sessionID string) (string, error) {
 
 // GetUserInfo アクセストークンからユーザー情報を取得
 func (u *authUseCase) GetUserInfo(accessToken string) (entity.UserInfo, error) {
-	//return u.authleteClient.GetUserInfo(accessToken)
-	return entity.UserInfo{
-		Sub: "1234567890",
-		Name: "John Doe",
-		Email: "john.doe@example.com",
-	}, nil
+	return u.authleteClient.GetUserInfo(accessToken)
 }
 
 // DeleteSession セッションを削除

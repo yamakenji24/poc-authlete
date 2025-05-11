@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Login } from "./features/auth/Login";
 import { AuthorizationRequest } from "./features/auth/AuthorizationRequest";
 import { Dashboard } from "./features/dashboard/Dashboard";
+import { AccountSettings } from "./pages/AccountSettings";
 import { useEffect } from "react";
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -42,6 +43,14 @@ function App() {
           element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute>
+              <AccountSettings />
             </PrivateRoute>
           }
         />

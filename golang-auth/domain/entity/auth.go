@@ -16,13 +16,6 @@ type AuthResponse struct {
 	ResponseContent string `json:"responseContent"`
 }
 
-type TokenResponse struct {
-	AccessToken     string `json:"accessToken"`
-	RefreshToken    string `json:"refreshToken"`
-	IdToken         string `json:"idToken"`
-	ResponseContent string `json:"responseContent"`
-}
-
 type Tokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -35,4 +28,11 @@ type UserInfo struct {
 	Email     string `json:"email"`
 	Picture   string `json:"picture"`
 	UpdatedAt int64  `json:"updated_at"`
+}
+
+type TokenResponse struct {
+	AccessToken     string `json:"accessToken"`
+	RefreshToken    string `json:"refreshToken"`
+	IdToken         string `json:"idToken"`
+	ResponseContent string `json:"responseContent"`
 }
